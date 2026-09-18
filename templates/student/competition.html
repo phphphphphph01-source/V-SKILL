@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="live-hero card">
+  <div><span class="eyebrow">V-SKILL LIVE ARENA</span><h1>แข่งขันสด ⚡</h1><p>รวมเพื่อนเข้าห้องเดียวกัน แล้วตอบโจทย์ทักษะแบบเรียลไทม์ ใครตอบถูกและเร็วกว่า จะได้คะแนนมากกว่า</p><div class="hero-badges"><span class="pill">👥 สูงสุด 30 คน</span><span class="pill">⏱️ ข้อละ 15 วินาที</span><span class="pill">🏆 ตารางคะแนนสด</span></div></div>
+  <div class="live-hero-art">🏟️</div>
+</div>
+<div class="grid two">
+  <div class="card"><span class="eyebrow">CREATE ROOM</span><h2>สร้างห้องแข่งขัน</h2><p>คุณจะเป็นเจ้าของห้องและกดเริ่มการแข่งขันเมื่อมีผู้เล่นอย่างน้อย 2 คน</p><form method="post" action="/student/competition/create"><input name="title" placeholder="ชื่อการแข่งขัน เช่น ศึกสายคอม ⚡" maxlength="180"><button class="btn" type="submit">สร้างห้อง 🚀</button></form></div>
+  <div class="card"><span class="eyebrow">JOIN ROOM</span><h2>เข้าห้องด้วยรหัส</h2><p>รับรหัส 6 ตัวจากเพื่อน แล้วเข้าร่วมได้ทันที</p><form method="post" action="/student/competition/join"><input name="code" placeholder="เช่น A7K9P2" maxlength="6" required style="text-transform:uppercase;letter-spacing:.15em"><button class="btn secondary" type="submit">เข้าร่วมการแข่งขัน 🎮</button></form></div>
+</div>
+{% if request.args.get('error') %}<div class="flash">{{request.args.get('error')}}</div>{% endif %}
+{% if recent %}<div class="section-title"><div><span class="eyebrow">YOUR MATCH HISTORY</span><h2>การแข่งขันล่าสุด</h2></div></div><div class="grid three">{% for r in recent %}<a class="card" href="/student/competition/{{r.competition.code}}" style="text-decoration:none"><span class="eyebrow">{{r.competition.code}}</span><h3>{{r.competition.title}}</h3><div class="big">{{r.score|round(0)}}<small style="font-size:18px"> pts</small></div><p>ตอบถูก {{r.correct_count}} ข้อ</p></a>{% endfor %}</div>{% endif %}
+{% endblock %}

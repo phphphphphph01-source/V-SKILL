@@ -1,0 +1,19 @@
+{% extends "base.html" %}{% block content %}
+<div class="discovery-banner card">
+  <div><span class="eyebrow">YOUR DEPARTMENT · ADAPTIVE MISSION</span><h1>{{current_user.departments[0].name}} 🎯</h1><p>ระบบจะจัด Mission ให้ตรงกับสายที่คุณเลือก และค่อย ๆ เพิ่มความยากตามผลงานจริง เปลี่ยนสายได้ตลอดจากเมนู “เปลี่ยนสายการเรียน”</p>
+  <div class="hero-badges"><span class="pill">🔎 ค้นหาความถนัด</span><span class="pill">📈 วัดจากผลงานจริง</span><span class="pill">🧭 แนะนำสายงาน</span></div></div>
+  <img src="/static/img/discovery.svg" alt="ภาพประกอบการค้นหาความถนัด">
+</div>
+<div class="section-title"><div><span class="eyebrow">ADAPTIVE MISSION LIBRARY</span><h2>ภารกิจสำหรับสายนี้</h2></div><p>{{missions|length}} ภารกิจที่ยังไม่เคยทำ</p></div>
+<div class="mission-grid">
+{% for m in missions %}
+<a class="mission" data-tilt href="/student/mission/{{m.id}}">
+  {% if m.department and "Computer" in m.department.name or m.department and "Information" in m.department.name %}<div class="mission-cover" style="background-image:url('/static/img/quiz.svg')"></div>
+  {% elif m.department and ("Electrical" in m.department.name or "Electronics" in m.department.name) %}<div class="mission-cover" style="background-image:url('/static/img/hero.svg')"></div>
+  {% elif m.department and ("Automotive" in m.department.name or "Mechanical" in m.department.name) %}<div class="mission-cover" style="background-image:url('/static/img/career.svg')"></div>
+  {% else %}<div class="mission-cover" style="background-image:url('/static/img/discovery.svg')"></div>{% endif %}
+  <span>LEVEL {{m.difficulty}} · {{m.department.name if m.department else "GENERAL"}}</span><h2>{{m.title}}</h2><p>{{m.scenario}}</p><footer>⏱ {{m.time_limit}} sec · 🧠 {{m.skills|length}} skills · ✨ Interactive</footer>
+</a>
+{% else %}<div class="card"><h2>ยังไม่มี Discovery Mission</h2><p>ให้ Teacher/Admin เพิ่ม Mission ที่เปิดโหมด Discovery ก่อน</p></div>{% endfor %}
+</div>
+{% endblock %}

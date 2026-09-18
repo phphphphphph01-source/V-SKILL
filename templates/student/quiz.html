@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="quiz-shell">
+  <div class="quiz-hero">
+    <div>
+      <span class="eyebrow">QUIZ ARENA · {{current_user.departments[0].name if current_user.departments else "DEPARTMENT"}}</span>
+      <h1>สนามทดสอบทักษะ 🧠</h1>
+      <p>ข้อสอบทั้งรอบถูกจำกัดให้อยู่ในสายการเรียนที่คุณเลือกเท่านั้น และสุ่มจากสถานการณ์วิชาชีพที่ผ่านการตรวจความซ้ำแล้ว</p>
+      <div class="hero-badges">
+        <span class="pill">🎲 <b>สุ่ม 10 ข้อ</b></span><span class="pill">⚡ <b>หลายหมวดทักษะ</b></span><span class="pill">🏆 <b>ดูคะแนนทันที</b></span>
+      </div>
+    </div>
+    <img src="/static/img/quiz.svg" alt="ภาพประกอบสนามทดสอบทักษะ">
+  </div>
+
+  <form id="quizForm" class="quiz-card card">
+    <div class="quiz-top">
+      <div><span class="quiz-category">RANDOM CHALLENGE</span><h2>รอบนี้คุณจะเจออะไร?</h2></div>
+      <div class="quiz-streak">10 QUESTIONS</div>
+    </div>
+    {% for q in questions %}
+    <section class="quiz-question reveal" data-skills="{{q.skills|tojson|e}}" style="--delay:{{loop.index0*60}}ms">
+      <div class="quiz-top"><span class="quiz-category">{{q.category}} · {{q.sub}}</span><span>{{loop.index}} / {{questions|length}}</span></div>
+      <div class="quiz-progress"><i style="--value:{{((loop.index)/questions|length*100)|round(0)}}%"></i></div>
+      <div class="eyebrow">{{q.question_type if q.question_type else "REAL-WORLD SCENARIO"}}</div><h2>{{q.question}}</h2>
+      {% for c in q.choices %}
+      <label class="choice quiz-choice">
+        <input type="radio" name="{{q.id}}" value="{{loop.index0}}" hidden>
+        <span class="choice-letter">{{"ABCD"[loop.index0]}}</span><span>{{c}}</span>
+      </label>
+      {% endfor %}
+    </section>
+    {% endfor %}
+    <button class="btn" type="submit" id="quizSubmit">ส่งคำตอบทั้งหมด 🚀</button>
+  </form>
+
+  <div id="quizResult" class="card result-card" hidden></div>
+
+  {% if history %}
+  <div class="section-title"><div><span class="eyebrow">RECENT RUNS</span><h2>ผลการเล่นล่าสุด</h2></div></div>
+  <div class="grid three">
+  {% for h in history %}
+    <div class="card" data-tilt><span class="eyebrow">RUN {{loop.index}}</span><div class="big">{{h.score}}%</div><p>ถูก {{h.correct}} / {{h.total}} ข้อ</p></div>
+  {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const form=document.getElementById('quizForm'), result=document.getElementById('quizResult');
+document.querySelectorAll('.quiz-choice').forEach(label=>{
+  label.addEventListener('click',()=>{
+    const input=label.querySelector('input'), group=label.closest('.quiz-question');
+    group.querySelectorAll('.quiz-choice').forEach(x=>x.classList.remove('selected'));
+    label.classList.add('selected'); input.checked=true;
+  });
+});
+form.addEventListener('submit',async e=>{
+  e.preventDefault();
+  const answers={}; new FormData(form).forEach((v,k)=>answers[k]=v);
+  const unanswered=[...document.querySelectorAll('.quiz-question')].filter(q=>!q.querySelector('input:checked')).length;
+  if(unanswered){ alert(`ยังไม่ได้ตอบ ${unanswered} ข้อ`); return; }
+  const btn=document.getElementById('quizSubmit'); btn.disabled=true; btn.textContent='กำลังวิเคราะห์ผล...';
+  const r=await fetch('/student/quiz',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({answers})});
+  const d=await r.json();
+  if(!d.ok){alert(d.error||'เกิดข้อผิดพลาด');btn.disabled=false;return;}
+  form.style.display='none'; result.hidden=false;
+  result.innerHTML=`<span class="result-badge">MISSION COMPLETE</span><div class="result-score">${d.score}%</div><div class="result-stats"><span>ตอบถูก <b>${d.correct}/${d.total}</b></span><span>รอบใหม่ <b>สุ่มโจทย์ชุดใหม่</b></span></div><p>ผลนี้เป็น Knowledge Assessment ของคุณโดยตรง — Skill Perks จะไม่เปลี่ยนคำถาม ตัวเลือก ความยาก คะแนน หรือผลการสอบ</p><div class="result-actions"><a class="btn" href="/student/quiz">🎲 สุ่มรอบใหม่</a><a class="btn secondary" href="/student/">ดู Skill Dashboard</a></div>`;
+  window.scrollTo({top:result.offsetTop-100,behavior:'smooth'});
+});
+</script>
+{% endblock %}

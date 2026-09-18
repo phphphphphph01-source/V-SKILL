@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %} · Buddy Studio{% endblock %}
+{% block content %}
+<div class="buddy-head">
+  <div>
+    <span class="eyebrow">BUDDY STUDIO</span>
+    <h1>Buddy Studio <span aria-hidden="true">🐾</span></h1>
+    <p>จัดการคู่หูประจำ Skill และไอเทมที่ติดตั้งจากผลงานจริงของคุณ</p>
+  </div>
+  <div class="buddy-level-chip"><span>LEVEL</span><b>{{progress.missions + progress.achievements + 1}}</b><small>จากผลงานจริง</small></div>
+</div>
+
+<section class="buddy-profile card">
+  <div class="buddy-profile-main">
+    <div class="buddy-avatar-wrap" data-rarity="{{current_avatar_item.rarity if current_avatar_item else 'common'}}">
+      <div id="avatar2d-main" class="buddy-avatar" data-species="{{avatar.species or 'fox'}}" aria-label="Buddy {{avatar.species or 'fox'}}"></div>
+      <span class="buddy-level-badge">LV {{progress.missions + progress.achievements + 1}}</span>
+    </div>
+    <div class="buddy-identity">
+      <span class="eyebrow">MY BUDDY</span>
+      <h2>{{ {'fox':'Explorer Fox','cat':'Smart Cat','rabbit':'Builder Rabbit','panda':'Tech Panda','penguin':'Cyber Penguin','tiger':'Engineer Tiger','owl':'AI Owl','wolf':'Cyber Wolf','dragon':'V-Dragon','unicorn':'V-Unicorn'}.get(avatar.species or 'fox', 'Buddy') }}</h2>
+      <p>คู่หูที่คุณเลือกไว้สำหรับตัวตนใน V-SKILL</p>
+      <div class="buddy-meta"><span class="rarity {{avatar.rarity or 'common'}}">{{(avatar.rarity or 'common')|upper}}</span><span>•</span><span>LV {{progress.missions + progress.achievements + 1}}</span></div>
+      <div class="buddy-equipped-row">
+        <span>ไอเทมที่ติดตั้ง</span><b>{{equipped_skill_keys|length}} / 3</b>
+      </div>
+      <div class="buddy-equipped-icons">
+        {% for key in equipped_skill_keys %}
+          <span class="equipped-icon" title="{{key.replace('_',' ')}}"><img src="/static/img/avatar_assets/item_{{key}}.png" alt=""></span>
+        {% else %}
+          <span class="equipped-empty">ยังไม่มีไอเทมประจำ Skill</span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="buddy-stats">
+    <div><span>Mission สำเร็จ</span><b>{{progress.missions}}</b></div>
+    <div><span>Mission คะแนนสูง</span><b>{{progress.perfect}}</b></div>
+    <div><span>Achievement</span><b>{{progress.achievements}}</b></div>
+  </div>
+</section>
+
+<section class="card buddy-collection">
+  <div class="section-heading-row">
+    <div><span class="eyebrow">BUDDY COLLECTION</span><h2>เลือก Buddy</h2><p>เลือกได้เฉพาะตัวที่ปลดล็อกแล้ว และการเลือกจะบันทึกเป็น Buddy หลักทันที</p></div>
+    <div class="collection-count"><b>{{owned_ids|length}}</b><span>ปลดล็อกแล้ว</span></div>
+  </div>
+  <div class="rarity-filter" role="tablist" aria-label="กรองระดับ">
+    <button class="rarity-filter-btn active" data-rarity="all" type="button">ทั้งหมด</button>
+    <button class="rarity-filter-btn" data-rarity="common" type="button">Common</button>
+    <button class="rarity-filter-btn" data-rarity="rare" type="button">Rare</button>
+    <button class="rarity-filter-btn" data-rarity="epic" type="button">Epic</button>
+    <button class="rarity-filter-btn" data-rarity="legendary" type="button">Legendary</button>
+  </div>
+  <div class="buddy-grid">
+  {% for item in items %}
+    {% set owned=item.id in owned_ids %}{% set equipped=avatar.species==item.asset_key %}
+    <article class="buddy-card {% if not owned %}locked{% endif %} {% if equipped %}equipped{% endif %}" data-rarity="{{item.rarity}}">
+      <div class="buddy-card-avatar"><div class="avatar-mini-2d" data-preview-item="{{item.asset_key}}" data-preview-slot="species"></div>{% if not owned %}<div class="lock-overlay"><span>🔒</span><small>ยังไม่ปลดล็อก</small></div>{% endif %}</div>
+      <div class="buddy-card-body">
+        <div class="item-title-row"><h3>{{item.name}}</h3><span class="rarity {{item.rarity}}">{{item.rarity|upper}}</span></div>
+        <p>{{item.description}}</p>
+        {% if owned %}
+          <form method="post" class="buddy-equip-form"><input type="hidden" name="item_id" value="{{item.id}}"><button class="btn {% if equipped %}equipped-btn{% else %}secondary{% endif %}" type="submit">{% if equipped %}✓ Buddy ปัจจุบัน{% else %}เลือก Buddy{% endif %}</button></form>
+        {% else %}
+          <div class="unlock-condition"><span>🔒</span><div><b>ยังไม่ปลดล็อก</b><small>ต้องมี {{ item.unlock_value }} {{ {'missions':'Mission','perfect':'Mission คะแนนสูง','achievements':'Achievement'}.get(item.unlock_type,item.unlock_type) }}</small></div></div>
+        {% endif %}
+      </div>
+    </article>
+  {% endfor %}
+  </div>
+</section>
+
+<section class="card skill-loadout">
+  <div class="section-heading-row">
+    <div><span class="eyebrow">SKILL ITEM LOADOUT</span><h2>ไอเทมประจำ Skill</h2><p>ติดตั้งได้สูงสุด 3 ชิ้น ไอเทมที่ติดตั้งจะถูกบันทึกและส่งต่อให้ระบบ Skill Perks จริง</p></div>
+    <div class="collection-count"><b>{{equipped_skill_keys|length}}</b><span>/ 3 ติดตั้ง</span></div>
+  </div>
+  <div class="loadout-note">⚡ <b>การทำงานจริง:</b> การกด “ใส่ไอเทม” จะบันทึกลงบัญชีของคุณและเปิดใช้ Skill Perk ที่เชื่อมกับไอเทมนั้นเมื่อทำกิจกรรมที่รองรับ</div>
+  <div class="skill-item-grid">
+  {% for item in skill_items %}
+    {% set owned=item.id in owned_ids %}{% set equipped=item.asset_key in equipped_skill_keys %}{% set skill_id=skill_item_skill_map.get(item.asset_key) %}
+    <article class="skill-item-card {% if not owned %}locked{% endif %} {% if equipped %}equipped{% endif %}" data-rarity="{{item.rarity}}">
+      <div class="skill-item-preview"><img src="/static/img/avatar_assets/item_{{item.asset_key}}.png" alt="{{item.name}}" loading="lazy" draggable="false">{% if equipped %}<span class="installed-badge">✓ INSTALLED</span>{% elif not owned %}<div class="lock-overlay"><span>🔒</span></div>{% endif %}</div>
+      <div class="skill-item-body">
+        <div class="item-title-row"><h3>{{item.name}}</h3><span class="rarity {{item.rarity}}">{{item.rarity|upper}}</span></div>
+        <p>{{item.description}}</p>
+        <div class="skill-linked"><span>SKILL PERK</span><b>{{ {'xp_spark':'XP Spark','combo_core':'Combo Core','skill_accelerator':'Skill Accelerator','explorer_compass':'Explorer Compass','mission_hunter':'Mission Hunter','rare_hunter':'Rare Hunter','lucky_finder':'Lucky Finder','skill_analyzer':'Skill Analyzer','career_compass':'Career Compass','vbuddy_coach':'V-Buddy Coach','achievement_magnet':'Achievement Magnet'}.get(skill_id, skill_id) }}</b></div>
+        {% if owned %}
+          <form method="post"><input type="hidden" name="item_id" value="{{item.id}}"><button class="btn {% if equipped %}equipped-btn{% else %}secondary{% endif %}" type="submit">{% if equipped %}✓ ติดตั้งแล้ว{% else %}ใส่ไอเทม{% endif %}</button></form>
+        {% else %}
+          <div class="unlock-condition"><span>🔒</span><div><b>ยังไม่ปลดล็อก</b><small>ต้องมี {{item.unlock_value}} Mission{% if item.unlock_value==0 %} (เริ่มต้น){% endif %}</small></div></div>
+        {% endif %}
+      </div>
+    </article>
+  {% endfor %}
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}<link rel="stylesheet" href="/static/css/avatar2d.css?v=20260917d"><script src="/static/js/avatar2d.js?v=20260917c"></script>{% endblock %}

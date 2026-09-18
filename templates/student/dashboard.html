@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head"><div><span class="eyebrow">PLAYER DASHBOARD</span><h1>สวัสดี {{current_user.name}} 👋</h1><p>สาย {{current_user.departments[0].name if current_user.departments else "ยังไม่ได้เลือก"}} · ทำ Mission · พัฒนาทักษะ · ค้นหา Career จากหลักฐานจริง</p></div><div style="display:flex;gap:9px;flex-wrap:wrap"><a class="btn" href="/student/discovery">🎯 ค้นหาตัวเอง</a><a class="btn" href="/student/skills">✨ SKILL LAB</a><a class="btn secondary" href="/student/department">🧭 เปลี่ยนสาย</a></div></div>
+
+
+
+<div class="progress-hud card">
+  <div><span class="eyebrow">YOUR PATH</span><h2>{{current_user.departments[0].name}}</h2><div class="hud-progress"><i style="--value:{{[progress.progress_points if progress else 0,100]|min}}%"></i></div></div>
+  <div class="hud-stat"><small>XP</small><b>{{progress.xp if progress else 0}}</b></div>
+  <div class="hud-stat"><small>PROGRESS</small><b>{{progress.progress_points|round(0) if progress else 0}}</b></div>
+  <div class="hud-stat"><small>MISSION</small><b>{{current_user.attempts|length}}</b></div>
+</div>
+
+
+
+<div class="grid four">
+<div class="card" data-tilt><span class="eyebrow">DISCOVERY</span><div class="big" data-count="{{missions|length}}">0</div><p>ภารกิจที่แนะนำ</p></div>
+<div class="card" data-tilt><span class="eyebrow">STRENGTH</span><div class="big" data-count="{{profile|selectattr('qualified')|list|length}}">0</div><p>ทักษะที่มีหลักฐาน</p></div>
+<div class="card" data-tilt><span class="eyebrow">CAREER</span><div class="big" data-count="{{careers|length}}">0</div><p>สายงานที่น่าลอง</p></div>
+<div class="card" data-tilt><span class="eyebrow">NEXT MISSION</span><div class="big">{{missions|length}}</div><p>ภารกิจใหม่ในสายของคุณ</p></div></div>
+
+<div class="grid two">
+  <div class="card">
+    <span class="eyebrow">SKILL CORE</span><h2>ภาพรวมทักษะของคุณ</h2>
+    {% set qualified = profile|selectattr('qualified')|sort(attribute='score',reverse=true)|list %}
+    {% for x in qualified[:5] %}
+      <div class="metric"><b>{{x.skill}}</b><span>{{x.score}}%</span><small>หลักฐาน {{x.evidence}} Mission · ความมั่นใจ {{x.confidence_score}}%</small><div class="progress-track" style="grid-column:1/-1"><i style="--value:{{x.score}}%"></i></div></div>
+    {% else %}
+      <div class="flash">ทำ Mission ให้ครบอย่างน้อย 2 ภารกิจที่เกี่ยวข้องกับ Skill เดียวกัน เพื่อสร้าง Skill Evidence</div>
+    {% endfor %}
+  </div>
+  <div class="card">
+    <span class="eyebrow">NEXT LEVEL</span><h2>ภารกิจถัดไป</h2>
+    <p>ระบบจะเลือกโจทย์ที่เหมาะกับระดับของคุณ และไม่นำ Mission ที่เคยทำแล้วกลับมาใช้ซ้ำ</p>
+    <a class="btn" href="/student/discovery">เริ่ม Mission →</a>
+  </div>
+</div>
+<div class="grid two">
+  <div class="card chart"><div class="section-title" style="margin:0 0 10px"><div><span class="eyebrow">SKILL PROFILE</span><h2>Skill Map</h2></div></div><canvas id="skillChart"></canvas></div>
+  <div class="card"><span class="eyebrow">YOUR EDGE</span><h2>Top Strengths</h2>
+    {% set qualified = profile|selectattr('qualified')|sort(attribute='score',reverse=true)|list %}
+    {% for x in qualified[:3] %}<div class="metric"><b>{{x.skill}}</b><span>{{x.score}}%</span><small>หลักฐาน {{x.evidence}} Mission · {{x.confidence}}</small><div class="progress-track" style="grid-column:1/-1"><i style="--value:{{x.score}}%"></i></div></div>
+    {% else %}<div class="flash">ทำ Mission อย่างน้อย 2 ครั้งที่เกี่ยวข้องกับทักษะเดียวกัน เพื่อให้ระบบยืนยัน Strength จากหลักฐาน</div>{% endfor %}
+    
+  </div>
+</div>
+<div class="grid two">
+  <div class="card"><span class="eyebrow">CAREER FIT</span><h2>สายงานที่น่าลอง</h2>{% for x in careers %}<div class="fit"><span>{{x.career}}</span><b>{{x.fit}}%</b></div>{% endfor %}</div>
+  <div class="card"><span class="eyebrow">DEPARTMENT FIT</span><h2>สาขาที่น่าลอง</h2>{% for x in departments %}<div class="fit"><span>{{x.department}}</span><b>{{x.fit}}%</b></div>{% endfor %}</div>
+</div>
+<script>
+fetch('/api/student/skill-profile').then(r=>r.json()).then(d=>{
+ new Chart(document.getElementById('skillChart'),{type:'radar',data:{labels:d.map(x=>x.skill),datasets:[{label:'Skill',data:d.map(x=>x.score),fill:true,borderWidth:2}]},options:{animation:{duration:1400,easing:'easeOutQuart'},plugins:{legend:{display:false}},scales:{r:{min:0,max:100,ticks:{display:false},grid:{color:'rgba(160,174,225,.12)'},angleLines:{color:'rgba(160,174,225,.12)'}}}}});
+});
+</script>
+{% endblock %}
+{% block scripts %}{% endblock %}

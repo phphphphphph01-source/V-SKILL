@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="mission-shell">
+  <div class="page-head"><div><span class="eyebrow">REAL-WORLD ASSESSMENT · 10 QUESTIONS</span><h1>{{mission.title}}</h1><p>สาย <strong>{{mission.department.name}}</strong> · ระดับ {{mission.difficulty}} · แบบทดสอบ {{mission.steps|length}} ข้อ วัดการคิดวิเคราะห์และการตัดสินใจจากสถานการณ์จริง</p></div></div>
+  <div class="scenario">
+    <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap">
+      {% if mission.department and ("Computer" in mission.department.name or "Information" in mission.department.name) %}<img class="empty-art" src="/static/img/quiz.svg" alt="ภาพประกอบงานคอมพิวเตอร์">
+      {% elif mission.department and ("Electrical" in mission.department.name or "Electronics" in mission.department.name) %}<img class="empty-art" src="/static/img/hero.svg" alt="ภาพประกอบงานระบบ">
+      {% elif mission.department and ("Automotive" in mission.department.name or "Mechanical" in mission.department.name) %}<img class="empty-art" src="/static/img/career.svg" alt="ภาพประกอบงานช่าง">
+      {% else %}<img class="empty-art" src="/static/img/discovery.svg" alt="ภาพประกอบการค้นหาความถนัด">{% endif %}
+      <div style="flex:1"><b>สถานการณ์</b><div>{{mission.scenario}}</div></div>
+    </div>
+  </div>
+  <div class="card"><b>แบบทดสอบ:</b> {{mission.steps|length}} ข้อ · เวลา {{(mission.time_limit / 60)|round(0)}} นาที · งบ {{mission.budget|round(0)}} บาท · ระดับ {{mission.difficulty}} · {{mission.skills|length}} Skills</div>
+  <div id="mission" data-id="{{mission.id}}" data-limit="{{mission.time_limit}}" data-session="{{mission_session.id}}">
+    {% for s in mission.steps %}
+    <section class="step" data-step="{{s.id}}" data-hint1="{{s.hint1|e}}" data-hint2="{{s.hint2|e}}" data-hint3="{{s.hint3|e}}" data-skills="{{mission.skills|map(attribute='name')|list|tojson|e}}">
+      <div class="quiz-top"><span class="quiz-category">QUESTION {{loop.index}}</span><span>ข้อ {{loop.index}} / {{mission.steps|length}}</span></div>
+      <h2>{{s.prompt}}</h2>
+      {% for c in choice_map[s.id] %}
+      <button type="button" class="choice" data-choice="{{c.id}}" data-points="{{c.points}}" data-consequence="{{c.consequence|e}}"><span class="choice-letter">{{"ABCD"[loop.index0]}}</span>{{c.text}}</button>
+      {% endfor %}
+      <p class="consequence" id="con-{{s.id}}"></p>
+    </section>
+    {% endfor %}
+  </div>
+  <button class="btn" id="submit">ส่งคำตอบทั้งหมด 🚀</button>
+  <div id="result"></div>
+</div>
+{% endblock %}
+{% block scripts %}<script src="/static/js/mission.js"></script>{% endblock %}

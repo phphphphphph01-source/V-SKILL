@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#080b18">
+<title>{{ app_name }}{% block title %}{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/app.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div class="ambient ambient-a"></div><div class="ambient ambient-b"></div><div class="ambient ambient-c"></div>
+<div class="cursor-glow"></div>
+<nav class="top-nav">
+  <div class="nav-left">
+    <a class="brand" href="/" aria-label="V-SKILL หน้าหลัก">V-SKILL<span class="brand-dot"></span></a>
+    {% if current_user.is_authenticated %}
+    <div class="primary-nav" aria-label="เมนูหลัก">
+      {% if current_user.role=="student" %}
+      <a class="nav-link" href="/student/">🏠 <span>หน้าหลัก</span></a>
+      <a class="nav-link" href="/student/discovery">🎯 <span>Mission</span></a>
+      <a class="nav-link nav-live" href="/student/competition">⚡ <span>แข่งขันสด</span><i class="live-dot"></i></a>
+      <a class="nav-link nav-buddy" href="/student/avatar">🐾 <span>BUDDY STUDIO</span></a>
+      {% elif current_user.role=="teacher" %}
+      <a class="nav-link" href="/teacher/">🧑‍🏫 <span>Teacher Dashboard</span></a>
+      {% elif current_user.role=="admin" %}
+      <a class="nav-link" href="/admin/">⚙️ <span>Admin Dashboard</span></a>
+      {% endif %}
+    </div>
+    {% if current_user.role=="student" %}
+    <details class="more-menu">
+      <summary>☰ <span>เมนูเพิ่มเติม</span></summary>
+      <div class="more-panel">
+        <div class="menu-group-title">เส้นทางและทักษะ</div>
+        <a href="/student/department">🧭 เปลี่ยนสายการเรียน</a>
+        <a href="/student/quiz">🧠 สนามข้อสอบ</a>
+        <a href="/student/careers">💼 สายงานที่เหมาะ</a>
+        <a href="/student/learning">📚 การเรียนรู้</a>
+        <a href="/student/skill-dna">🧬 Skill DNA</a>
+        <a href="/student/growth">📈 พัฒนาการ</a>
+        <div class="menu-group-title">ผลงาน</div>
+        <a href="/student/portfolio">🗂️ ผลงานของฉัน</a>
+        <a href="/student/report">📊 รายงาน</a>
+        <a href="/student/achievements">🏆 ความสำเร็จ</a>
+        <a href="/student/interview">🎤 จำลองสัมภาษณ์งาน</a>
+      </div>
+    </details>
+    {% endif %}
+    {% endif %}
+  </div>
+  <div class="nav-account">
+    {% if current_user.is_authenticated %}
+      <span class="nav-user">{{ current_user.name }}</span>
+      <a class="nav-link logout" href="/logout">ออกจากระบบ</a>
+    {% else %}
+      <a class="nav-link" href="/login">เข้าสู่ระบบ</a><a class="btn nav-cta" href="/register">สมัครสมาชิก</a>
+    {% endif %}
+  </div>
+</nav>
+<main>
+{% with messages=get_flashed_messages() %}{% for m in messages %}<div class="flash toast">{{m}}</div>{% endfor %}{% endwith %}
+{% block content %}{% endblock %}
+</main>
+<script src="/static/js/app.js"></script>
+{% block scripts %}{% endblock %}
+</body></html>

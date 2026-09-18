@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <div class="hero-copy">
+    <span class="eyebrow">AI CAREER · REAL-WORLD SKILL DISCOVERY</span>
+    <h1>ค้นหาว่าคุณเก่งอะไร<br>ด้วยการลงมือทำจริง</h1>
+    <p>V-SKILL เปลี่ยนการค้นหาตัวเองจากแบบสอบถาม เป็นสนามจำลองที่ให้คุณคิด ตัดสินใจ แก้ปัญหา และเรียนรู้จาก Performance จริง</p>
+    <div class="hero-badges"><span class="pill">🎮 <b>Real-world Missions</b></span><span class="pill">🧠 <b>Skill Discovery</b></span><span class="pill">🎲 <b>Random Quiz Arena</b></span><span class="pill">⚡ <b>Live Competition</b></span><span class="pill">🐾 <b>Avatar Rewards</b></span></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:22px"><a class="btn" href="/register">🚀 เริ่มค้นหาตัวเอง</a><a class="btn secondary" href="/login">เข้าสู่ระบบ</a></div>
+  </div>
+  <div class="hero-art"><img src="/static/img/hero.svg" alt="ภาพประกอบ V-SKILL"></div>
+</section>
+<div class="section-title"><div><span class="eyebrow">HOW IT WORKS</span><h2>ไม่รู้ว่าถนัดอะไร ก็เริ่มได้</h2></div><p>ลอง → ทำ → วิเคราะห์ → ค้นพบ</p></div>
+<div class="grid three">
+  <div class="card" data-tilt><div class="icon-box">🎮</div><span class="eyebrow">01 · TRY</span><h2>ลองทำจริง</h2><p>เจอสถานการณ์จำลองจากหลายสายงาน แล้วตัดสินใจเหมือนอยู่ในสถานที่ทำงาน</p><span class="feature-number">01</span></div>
+  <div class="card" data-tilt><div class="icon-box">🧠</div><span class="eyebrow">02 · ANALYZE</span><h2>วิเคราะห์ความถนัด</h2><p>ระบบดูจากวิธีคิด ความแม่นยำ เวลา และการตัดสินใจ ไม่ใช่การสุ่มคะแนน</p><span class="feature-number">02</span></div>
+  <div class="card" data-tilt><div class="icon-box">🚀</div><span class="eyebrow">03 · DISCOVER</span><h2>รู้จักตัวเองมากขึ้น</h2><p>ดู Skill Map, Strengths, Skill DNA และสายอาชีพที่น่าลองต่อ</p><span class="feature-number">03</span></div>
+</div>
+<div class="section-title"><div><span class="eyebrow">PLAY · COMPETE · CUSTOMIZE</span><h2>เรียนรู้แบบเกม แต่ได้หลักฐานทักษะจริง</h2></div></div>
+<div class="grid two">
+  <div class="card" data-tilt><div class="icon-box">⚡</div><span class="eyebrow">LIVE COMPETITION</span><h2>แข่งกับเพื่อนแบบเรียลไทม์</h2><p>สร้างห้อง แชร์รหัส แล้วตอบโจทย์พร้อมกัน คะแนนคิดจากความถูกต้องและความเร็ว พร้อมตารางอันดับสด</p><a class="btn" href="/student/competition">เข้าสู่สนามแข่งขัน</a></div>
+  <div class="card" data-tilt><div class="icon-box">🐾</div><span class="eyebrow">AVATAR LAB</span><h2>คู่หูของคุณจะเติบโตไปพร้อมกัน</h2><p>ทำ Mission และเก็บ Achievement เพื่อปลดล็อกสัตว์น่ารัก หมวก ผ้าพันคอ และของแต่งตัว แล้วสวมใส่ให้เป็นสไตล์ของคุณ</p><a class="btn secondary" href="/register">สร้างตัวละครของฉัน</a></div>
+</div>
+{% endblock %}

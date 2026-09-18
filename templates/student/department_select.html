@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %} · เลือกสายการเรียน{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <span class="eyebrow">YOUR LEARNING PATH</span>
+    <h1>{{ "เปลี่ยนสายการเรียน" if current else "เลือกสายการเรียนของคุณ" }}</h1>
+    <p>เลือกสายที่ต้องการฝึก ระบบจะจัด Mission และการวิเคราะห์ทักษะให้ตรงกับสายนี้ คุณสามารถเปลี่ยนได้ทุกเมื่อโดยไม่ลบประวัติ Skill เดิม</p>
+  </div>
+</div>
+{% if error %}<div class="flash">⚠️ {{error}}</div>{% endif %}
+<form method="post">
+<div class="grid three department-grid">
+{% for d in departments %}
+<label class="department-card card">
+  <input type="radio" name="department_id" value="{{d.id}}" {% if current and current.id==d.id %}checked{% endif %} required>
+  <div class="department-icon">
+    {% if "คอมพิวเตอร์" in d.name %}💻{% elif "ไฟฟ้า" in d.name %}⚡{% elif "อิเล็กทรอนิกส์" in d.name %}🤖{% elif "ยนต์" in d.name %}🔧{% elif "ผลิต" in d.name %}🏭{% elif "ธุรกิจ" in d.name %}📊{% elif "กราฟิก" in d.name %}🎨{% elif "อาหาร" in d.name %}🍳{% elif "ก่อสร้าง" in d.name %}🏗️{% elif "โลจิสติกส์" in d.name %}🚚{% else %}🏨{% endif %}
+  </div>
+  <h2>{{d.name}}</h2><p>{{d.description}}</p>
+  <span class="department-select">เลือกสายนี้</span>
+</label>
+{% endfor %}
+</div>
+<div class="card" style="margin-top:18px;display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap">
+  <div><b>ระบบจะเปลี่ยนโจทย์ให้ทันที</b><p style="margin:4px 0 0">Mission ใหม่จะมาจากสายที่เลือก และจะค่อย ๆ เพิ่มระดับตามผลงานจริง</p></div>
+  <button class="btn" type="submit">{{ "บันทึกการเปลี่ยนสาย" if current else "เริ่มเส้นทางของฉัน" }} →</button>
+</div>
+</form>
+<style>
+.department-grid{align-items:stretch}.department-card{position:relative;cursor:pointer;transition:transform .2s,box-shadow .2s;border:1px solid transparent}
+.department-card:hover{transform:translateY(-3px)}.department-card input{position:absolute;opacity:0}
+.department-card:has(input:checked){border-color:rgba(120,100,255,.7);box-shadow:0 0 0 2px rgba(120,100,255,.12)}
+.department-icon{font-size:40px;margin-bottom:10px}.department-card h2{margin:0 0 7px}.department-card p{min-height:48px}
+.department-select{display:inline-block;margin-top:12px;padding:7px 10px;border-radius:999px;background:rgba(120,100,255,.1)}
+</style>
+{% endblock %}

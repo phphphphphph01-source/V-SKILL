@@ -1,0 +1,18 @@
+{% macro render_avatar(species='fox', hat='', accessory='', badge='', compact=false) %}
+<div class="avatar-stage{% if compact %} avatar-stage-compact{% endif %}">
+  <div class="avatar-stars"><span class="spark s1"></span><span class="spark s2"></span><span class="spark s3"></span></div>
+  <div class="avatar-aura"></div>
+  <div class="animal-avatar {{species}}">
+    <div class="tail"></div><div class="ear left"></div><div class="ear right"></div>
+    <div class="body"><div class="belly"></div><div class="paw left"></div><div class="paw right"></div></div>
+    <div class="head"></div>
+    <div class="eye left"></div><div class="eye right"></div>
+    <div class="cheek left"></div><div class="cheek right"></div>
+    <div class="face-dot"></div><div class="nose"></div><div class="mouth"></div>
+  </div>
+  {% if hat %}<div class="wearable hat {{hat}}" aria-label="หมวก {{hat}}"></div>{% endif %}
+  {% if accessory %}<div class="wearable accessory {{accessory}}" aria-label="เครื่องแต่งกาย {{accessory}}"></div>{% endif %}
+  {% if badge %}<div class="wearable badge {{badge}}" aria-label="ตรา {{badge}}"></div>{% endif %}
+  {% if compact %}<div class="avatar-nameplate">Buddy</div>{% endif %}
+</div>
+{% endmacro %}

@@ -1,0 +1,1 @@
+{% extends "base.html" %}{% block content %}<span class="eyebrow">ADMIN</span><h1>System Analytics</h1><div class="grid four">{% for label,value in [('Users',users),('Missions',missions),('Departments',departments),('Skills',skills)] %}<div class="card"><h2>{{label}}</h2><div class="big">{{value}}</div></div>{% endfor %}</div>{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %} · Skill Profile{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><span class="eyebrow">V-SKILL · EVIDENCE PROFILE</span>
+  <h1>Skill Profile</h1>
+  <p>คะแนนทักษะมาจากผลการทำ Mission จริง ไม่ได้เพิ่มคะแนนจากการกดปุ่มหรือเลือกไอเทม และประวัติเดิมยังคงอยู่เมื่อคุณเปลี่ยนสาย</p></div>
+  <a class="btn secondary" href="/student/department">🧭 เปลี่ยนสาย</a>
+</div>
+<div class="card" style="margin-bottom:18px">
+  <span class="eyebrow">HOW IT WORKS</span>
+  <h2>Skill Evidence Engine</h2>
+  <p>ระบบดู Accuracy, คะแนนรวม, ความยากของ Mission, ความสม่ำเสมอ, เวลา และการใช้ Hint แล้วสรุปเป็น Skill Score พร้อมจำนวนหลักฐานและระดับความมั่นใจ</p>
+</div>
+<div class="grid two">
+{% for x in profile %}
+<article class="card">
+  <div style="display:flex;justify-content:space-between;gap:12px;align-items:start">
+    <div><span class="eyebrow">SKILL</span><h2>{{x.skill}}</h2></div>
+    <strong style="font-size:28px">{{x.score}}%</strong>
+  </div>
+  <div class="progress-track"><i style="--value:{{x.score}}%"></i></div>
+  <div style="display:flex;justify-content:space-between;margin-top:10px">
+    <span>หลักฐาน {{x.evidence}} Mission</span>
+    <span>{{x.confidence}}</span>
+  </div>
+  {% if not x.qualified %}<small>ทำ Mission ที่เกี่ยวข้องกับ Skill นี้เพิ่มอย่างน้อยอีก {{2-x.evidence if x.evidence<2 else 0}} ครั้ง เพื่อให้ระบบเริ่มยืนยันความสามารถ</small>{% endif %}
+</article>
+{% endfor %}
+</div>
+{% endblock %}
