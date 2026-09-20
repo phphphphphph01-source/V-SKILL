@@ -9,7 +9,8 @@ from routes.teacher import teacher_bp
 from routes.admin import admin_bp
 from routes.api import api_bp
 from database.seed import seed_database
-from sqlalchemy import text
+from core.library import seed_library, validate_library
+from sqlalchemy import text, inspect as sqlalchemy_inspect
 
 def migrate_question_bank_schema():
     """Add Question Bank metadata columns to older SQLite deployments safely."""
@@ -35,6 +36,37 @@ def migrate_question_bank_schema():
         db.session.commit()
     except Exception:
         db.session.rollback()
+
+def migrate_library_schema():
+    """Add learning-library fields to older SQLite/PostgreSQL installations safely."""
+    columns = {
+        "learning_objectives": "TEXT",
+        "practical_example": "TEXT",
+        "real_world_scenario": "TEXT",
+        "common_mistakes": "TEXT",
+        "safety_notes": "TEXT",
+        "checklist": "TEXT",
+        "mini_challenge": "TEXT",
+    }
+    media_columns = {"media_type": "VARCHAR(30)", "alt_text": "VARCHAR(255)"}
+    progress_columns = {
+        "last_position": "INTEGER DEFAULT 0",
+        "started_at": "TIMESTAMP",
+        "completed_at": "TIMESTAMP",
+    }
+    try:
+        inspector = sqlalchemy_inspect(db.engine)
+        for table, additions in (("library_article", columns), ("library_media", media_columns), ("library_progress", progress_columns)):
+            if table not in inspector.get_table_names():
+                continue
+            existing = {col["name"] for col in inspector.get_columns(table)}
+            for name, sql_type in additions.items():
+                if name not in existing:
+                    db.session.execute(text(f"ALTER TABLE {table} ADD COLUMN {name} {sql_type}"))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
 
 def migrate_avatar_schema():
     """Lightweight SQLite-safe migration for the 2D Avatar Studio equipment state."""
@@ -76,7 +108,11 @@ def create_app():
         db.create_all()
         migrate_avatar_schema()
         migrate_question_bank_schema()
+        migrate_library_schema()
         seed_database()
+        seed_library()
+        for warning in validate_library():
+            app.logger.warning("Library validation: %s", warning)
 
     return app
 

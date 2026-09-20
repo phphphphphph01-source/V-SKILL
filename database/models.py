@@ -19,6 +19,18 @@ career_skill = db.Table(
     db.Column("skill_id", db.Integer, db.ForeignKey("skill.id"), primary_key=True),
 )
 
+library_article_skill = db.Table(
+    "library_article_skill",
+    db.Column("article_id", db.Integer, db.ForeignKey("library_article.id", ondelete="CASCADE"), primary_key=True),
+    db.Column("skill_id", db.Integer, db.ForeignKey("skill.id", ondelete="CASCADE"), primary_key=True),
+)
+
+library_article_mission = db.Table(
+    "library_article_mission",
+    db.Column("article_id", db.Integer, db.ForeignKey("library_article.id", ondelete="CASCADE"), primary_key=True),
+    db.Column("mission_id", db.Integer, db.ForeignKey("mission.id", ondelete="CASCADE"), primary_key=True),
+)
+
 class User(UserMixin, db.Model):
     id=db.Column(db.Integer, primary_key=True)
     name=db.Column(db.String(120), nullable=False)
@@ -415,3 +427,72 @@ class CompetitionAnswer(db.Model):
     participant=db.relationship('CompetitionParticipant', back_populates='answers')
     question=db.relationship('CompetitionQuestion', back_populates='answers')
     __table_args__=(db.UniqueConstraint('participant_id','question_id'),)
+
+# Knowledge Library (department-aware, evidence-safe learning content)
+class LibraryCategory(db.Model):
+    __tablename__ = "library_category"
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(160), nullable=False)
+    department_id = db.Column(db.Integer, db.ForeignKey("department.id"), nullable=False, index=True)
+    icon = db.Column(db.String(20), default="📚")
+    sort_order = db.Column(db.Integer, default=0)
+    department = db.relationship("Department")
+    articles = db.relationship("LibraryArticle", back_populates="category", cascade="all, delete-orphan")
+    __table_args__ = (db.UniqueConstraint("department_id", "name", name="uq_library_category_department_name"),)
+
+class LibraryArticle(db.Model):
+    __tablename__ = "library_article"
+    id = db.Column(db.Integer, primary_key=True)
+    department_id = db.Column(db.Integer, db.ForeignKey("department.id"), nullable=False, index=True)
+    category_id = db.Column(db.Integer, db.ForeignKey("library_category.id"), nullable=False, index=True)
+    title = db.Column(db.String(220), nullable=False)
+    slug = db.Column(db.String(240), unique=True, nullable=False, index=True)
+    summary = db.Column(db.Text, default="")
+    content = db.Column(db.Text, nullable=False)
+    difficulty = db.Column(db.String(30), default="พื้นฐาน")
+    estimated_minutes = db.Column(db.Integer, default=5)
+    cover_image = db.Column(db.String(255), default="")
+    tags = db.Column(db.Text, default="")
+    related_skills = db.Column(db.Text, default="")
+    related_topics = db.Column(db.Text, default="")
+    learning_objectives = db.Column(db.Text, default="")
+    practical_example = db.Column(db.Text, default="")
+    real_world_scenario = db.Column(db.Text, default="")
+    common_mistakes = db.Column(db.Text, default="")
+    safety_notes = db.Column(db.Text, default="")
+    checklist = db.Column(db.Text, default="")
+    mini_challenge = db.Column(db.Text, default="")
+    status = db.Column(db.String(20), default="published", index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    department = db.relationship("Department")
+    category = db.relationship("LibraryCategory", back_populates="articles")
+    media = db.relationship("LibraryMedia", back_populates="article", cascade="all, delete-orphan", order_by="LibraryMedia.sort_order")
+    progress = db.relationship("LibraryProgress", back_populates="article", cascade="all, delete-orphan")
+    skills = db.relationship("Skill", secondary=library_article_skill, lazy="selectin")
+    missions = db.relationship("Mission", secondary=library_article_mission, lazy="selectin")
+
+class LibraryMedia(db.Model):
+    __tablename__ = "library_media"
+    id = db.Column(db.Integer, primary_key=True)
+    article_id = db.Column(db.Integer, db.ForeignKey("library_article.id"), nullable=False, index=True)
+    image = db.Column(db.String(255), nullable=False)
+    caption = db.Column(db.String(255), default="")
+    media_type = db.Column(db.String(30), default="image")
+    alt_text = db.Column(db.String(255), default="")
+    sort_order = db.Column(db.Integer, default=0)
+    article = db.relationship("LibraryArticle", back_populates="media")
+
+class LibraryProgress(db.Model):
+    __tablename__ = "library_progress"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, nullable=False, index=True)
+    article_id = db.Column(db.Integer, db.ForeignKey("library_article.id"), nullable=False, index=True)
+    progress = db.Column(db.Integer, default=0)
+    completed = db.Column(db.Boolean, default=False)
+    last_position = db.Column(db.Integer, default=0)
+    started_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_read_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    completed_at = db.Column(db.DateTime)
+    article = db.relationship("LibraryArticle", back_populates="progress")
+    __table_args__ = (db.UniqueConstraint("user_id", "article_id", name="uq_library_progress_user_article"),)

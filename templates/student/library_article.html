@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %} · {{ article.title }}{% endblock %}
+{% block content %}
+<section class="library-reader">
+  <a class="reader-back" href="{{ url_for('student.library_home', department_id=article.department_id) }}">← กลับไปห้องสมุด</a>
+  <div class="reader-layout">
+    <article class="reader-main">
+      <div class="reader-cover"><img src="{{ article.cover_image }}" alt="ภาพประกอบ {{ article.title }}"></div>
+      <div class="reader-breadcrumb">{{ article.department.name }} / {{ article.category.name }}</div>
+      <h1>{{ article.title }}</h1>
+      <p class="reader-summary">{{ article.summary }}</p>
+      <div class="reader-meta"><span>ระดับ: {{ article.difficulty }}</span><span>⏱ {{ article.estimated_minutes }} นาที</span><span>📘 เนื้อหาเพื่อการเรียนรู้ ไม่ใช่เฉลยข้อสอบ</span></div>
+      <div class="reader-progress"><div><b>ความคืบหน้า</b><span id="progressLabel">{{ progress.progress if progress else 0 }}%</span></div><div class="reader-progress-bar"><i id="progressBar" style="width:{{ progress.progress if progress else 0 }}%"></i></div><div class="progress-buttons">{% for value in [0,25,50,75,100] %}<button type="button" class="progress-btn {% if progress and progress.progress == value %}active{% endif %}" data-progress="{{ value }}">{{ value }}%</button>{% endfor %}</div></div>
+      <div class="reader-content">{% for block in content_blocks %}{% set lines = block.split('\n') %}{% if lines[0].startswith('## ') %}<h2>{{ lines[0][3:] }}</h2>{% for line in lines[1:] %}{% if line.startswith('- ') %}<li>{{ line[2:] }}</li>{% elif line.strip() %}<p>{{ line }}</p>{% endif %}{% endfor %}{% elif lines[0].startswith('- ') %}<ul>{% for line in lines if line.startswith('- ') %}<li>{{ line[2:] }}</li>{% endfor %}</ul>{% else %}<p>{{ block }}</p>{% endif %}{% endfor %}</div>
+      <div class="reader-actions"><button class="btn" id="markRead" type="button">✓ ทำเครื่องหมายว่าอ่านจบ</button><span id="readStatus">{% if progress and progress.completed %}อ่านจบแล้ว{% elif progress %}อ่านไปแล้ว {{ progress.progress }}%{% else %}ยังไม่ได้บันทึกความคืบหน้า{% endif %}</span></div>
+    </article>
+    <aside class="reader-side">
+      <div class="reader-panel"><span class="eyebrow">LEARNING OBJECTIVES</span><h3>เมื่ออ่านจบแล้วควรทำได้</h3><div class="plain-lines">{% for line in (article.learning_objectives or '').split('\n') if line.strip() %}<p>{{ line }}</p>{% endfor %}</div></div>
+      <div class="reader-panel"><span class="eyebrow">RELATED SKILLS</span><h3>ทักษะที่เกี่ยวข้อง</h3><div class="skill-tags">{% for skill in skills %}<a href="{{ url_for('student.skills_page') }}" title="เปิด Skill Map">{{ skill.name }}</a>{% endfor %}</div><p class="side-note">การอ่านช่วยเตรียมความพร้อม แต่คะแนนทักษะจะเกิดจากการลงมือทำและหลักฐานจริงเท่านั้น</p></div>
+      <div class="reader-panel"><span class="eyebrow">TRY A REAL MISSION</span><h3>ไปฝึกต่อ</h3>{% for mission in related_missions %}<a class="related-mission" href="{{ url_for('student.mission', mission_id=mission.id) }}"><b>{{ mission.title }}</b><small>{{ mission.scenario }}</small></a>{% else %}<p class="side-note">ยังไม่มี Mission ที่เชื่อมกับบทความนี้</p>{% endfor %}</div>
+      <div class="reader-panel"><span class="eyebrow">RELATED LEARNING</span><h3>บทความที่เกี่ยวข้อง</h3>{% for item in related_articles %}<a class="side-link" href="{{ url_for('student.library_article', slug=item.slug) }}">{{ item.title }} →</a>{% else %}<p class="side-note">ยังไม่มีบทความที่เกี่ยวข้องเพิ่มเติม</p>{% endfor %}</div>
+      <div class="reader-panel"><span class="eyebrow">EXPLORE MORE</span><h3>หมวดอื่นในแผนก</h3>{% for category in related_categories %}<a class="side-link" href="{{ url_for('student.library_home', department_id=article.department_id, category_id=category.id) }}">{{ category.icon }} {{ category.name }} →</a>{% endfor %}</div>
+    </aside>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<style>
+.library-reader{max-width:1220px;margin:0 auto;padding:26px 20px 70px}.reader-back{display:inline-block;color:#8fa0c1;text-decoration:none;font-size:12px;margin-bottom:18px}.reader-layout{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:22px;align-items:start}.reader-main,.reader-panel{border:1px solid var(--line);border-radius:24px;background:linear-gradient(145deg,rgba(20,27,54,.94),rgba(8,13,28,.98));overflow:hidden}.reader-main{padding:28px}.reader-cover{height:260px;border-radius:18px;overflow:hidden;background:#0b1530;margin-bottom:24px}.reader-cover img{width:100%;height:100%;object-fit:cover}.reader-breadcrumb{font-size:11px;color:#55dcff;margin-bottom:10px}.reader-main h1{font:800 clamp(32px,5vw,52px) Kanit;line-height:1.25;margin:0 0 14px;color:#fff}.reader-summary{font-size:16px;line-height:1.8;color:#b1bfdb;margin:0 0 18px}.reader-meta{display:flex;gap:8px;flex-wrap:wrap;padding:12px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);color:#8fa0c1;font-size:10px}.reader-progress{padding:18px 0;border-bottom:1px solid var(--line)}.reader-progress>div:first-child{display:flex;justify-content:space-between;color:#fff;font-size:12px}.reader-progress-bar{height:7px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;margin:12px 0}.reader-progress-bar i{display:block;height:100%;background:linear-gradient(90deg,#55dcff,#7b7dff)}.progress-buttons{display:flex;gap:6px;flex-wrap:wrap}.progress-btn{border:1px solid var(--line);background:transparent;color:#9eaccb;border-radius:999px;padding:7px 11px;font-size:11px;cursor:pointer}.progress-btn.active,.progress-btn:hover{color:#fff;border-color:#55dcff;background:rgba(85,220,255,.1)}.reader-content{padding:24px 0;color:#d1daf0;font-size:15px;line-height:2}.reader-content p{margin:0 0 18px}.reader-content h2{font:800 24px Kanit;color:#fff;margin:28px 0 12px}.reader-content ul{padding-left:22px;margin:0 0 22px}.reader-content li{margin:5px 0}.reader-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:20px}.reader-actions span{font-size:11px;color:#8ff0c0}.reader-side{display:grid;gap:16px}.reader-panel{padding:20px}.reader-panel h3{font:800 23px Kanit;margin:6px 0 14px}.plain-lines p{color:#b1bfdb;font-size:12px;line-height:1.8;margin:6px 0}.skill-tags{display:flex;gap:7px;flex-wrap:wrap}.skill-tags a{padding:7px 9px;border-radius:999px;background:rgba(85,220,255,.07);border:1px solid rgba(85,220,255,.18);font-size:10px;color:#a9efff;text-decoration:none}.side-note{font-size:11px;line-height:1.8;color:#8fa0c1}.related-mission,.side-link{display:block;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.08);text-decoration:none;color:#fff}.related-mission b{display:block;font-size:12px}.related-mission small{display:block;color:#8fa0c1;font-size:10px;line-height:1.6;margin-top:3px}.side-link{color:#a9efff;font-size:12px}.side-link:last-child,.related-mission:last-child{border-bottom:0}@media(max-width:900px){.reader-layout{grid-template-columns:1fr}.reader-side{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:600px){.library-reader{padding:16px 12px 45px}.reader-main{padding:18px}.reader-cover{height:170px}.reader-side{grid-template-columns:1fr}.reader-content{font-size:14px}}
+</style>
+<script>
+(function(){
+  const buttons=[...document.querySelectorAll('.progress-btn')];
+  const bar=document.getElementById('progressBar'); const label=document.getElementById('progressLabel'); const status=document.getElementById('readStatus');
+  async function saveProgress(value){
+    buttons.forEach(btn=>btn.disabled=true);
+    try{
+      const response=await fetch(window.location.pathname,{method:'POST',headers:{'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},body:JSON.stringify({progress:value,last_position:value})});
+      const data=await response.json(); if(!response.ok || !data.ok) throw new Error('save_failed');
+      bar.style.width=data.progress+'%'; label.textContent=data.progress+'%'; status.textContent=data.completed?'อ่านจบแล้ว':'บันทึกความคืบหน้าแล้ว';
+      buttons.forEach(btn=>btn.classList.toggle('active',Number(btn.dataset.progress)===data.progress));
+    }catch(error){status.textContent='บันทึกไม่สำเร็จ กรุณาลองใหม่';}
+    finally{buttons.forEach(btn=>btn.disabled=false);}
+  }
+  buttons.forEach(btn=>btn.addEventListener('click',()=>saveProgress(Number(btn.dataset.progress))));
+  const complete=document.getElementById('markRead'); if(complete) complete.addEventListener('click',()=>saveProgress(100));
+})();
+</script>
+{% endblock %}
