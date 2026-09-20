@@ -11,6 +11,7 @@ from core.recommendation import learning_plan_data
 from core.quiz_bank import make_session, make_from_ids
 import uuid,datetime,random,json,secrets
 from core.avatar_items import ensure_catalog as ensure_avatar_item_catalog, curated_items as curated_avatar_items, skill_id_for_item
+from core.library import rank_library_articles, related_articles
 student_bp=Blueprint("student",__name__)
 
 def _require_department():
@@ -700,3 +701,126 @@ def avatar_page():
                            equipped_items=equipped_items,equipped_skill_keys=equipped_skill_keys,
                            skill_item_skill_map=skill_item_skill_map,progress=progress,
                            current_avatar_item=current_avatar_item)
+
+# ---------------------------------------------------------------------------
+# Knowledge Library — evidence-safe learning content connected to real Skills/Missions
+# ---------------------------------------------------------------------------
+@student_bp.get("/library")
+@login_required
+def library_home():
+    if current_user.role != "student":
+        abort(403)
+    active_department = _require_department()
+    # Show the active department catalog first, then other departments without
+    # exposing legacy aliases that were already consolidated by the seed migration.
+    departments = Department.query.order_by(Department.name).all()
+    selected_id = request.args.get("department_id", type=int) or (active_department.id if active_department else None)
+    selected = db.session.get(Department, selected_id) if selected_id else None
+    if not selected and active_department:
+        selected = active_department
+
+    q = (request.args.get("q") or "").strip()
+    category_id = request.args.get("category_id", type=int)
+    difficulty = (request.args.get("difficulty") or "").strip()
+    max_minutes = request.args.get("max_minutes", type=int)
+    completion = (request.args.get("completion") or "all").strip().lower()
+    categories, articles = [], []
+    if selected:
+        categories = LibraryCategory.query.filter_by(department_id=selected.id).order_by(LibraryCategory.sort_order, LibraryCategory.name).all()
+        query = LibraryArticle.query.filter_by(department_id=selected.id, status="published")
+        if category_id and any(category.id == category_id for category in categories):
+            query = query.filter_by(category_id=category_id)
+        if difficulty:
+            query = query.filter_by(difficulty=difficulty)
+        if max_minutes:
+            query = query.filter(LibraryArticle.estimated_minutes <= max(1, min(max_minutes, 180)))
+        articles = rank_library_articles(query.all(), q)
+
+    progress_rows = LibraryProgress.query.filter_by(user_id=current_user.id).all()
+    progress_map = {row.article_id: row for row in progress_rows}
+    if completion in {"unread", "reading", "completed"}:
+        def include(article):
+            row = progress_map.get(article.id)
+            if completion == "unread":
+                return not row or not row.completed and (row.progress or 0) == 0
+            if completion == "reading":
+                return bool(row and not row.completed and (row.progress or 0) > 0)
+            return bool(row and row.completed)
+        articles = [article for article in articles if include(article)]
+
+    continue_articles = [a for a in articles if progress_map.get(a.id) and not progress_map[a.id].completed]
+    continue_articles.sort(key=lambda a: progress_map[a.id].last_read_at or datetime.datetime.min, reverse=True)
+    recommended_articles = [a for a in articles if a not in continue_articles][:4]
+    completed_count = sum(1 for row in progress_rows if row.completed)
+    in_progress_count = sum(1 for row in progress_rows if not row.completed and (row.progress or 0) > 0)
+    return render_template(
+        "student/library.html",
+        departments=departments,
+        selected=selected,
+        active_department=active_department,
+        categories=categories,
+        articles=articles,
+        progress_map=progress_map,
+        q=q,
+        category_id=category_id,
+        difficulty=difficulty,
+        max_minutes=max_minutes,
+        completion=completion,
+        continue_articles=continue_articles[:4],
+        recommended_articles=recommended_articles,
+        completed_count=completed_count,
+        in_progress_count=in_progress_count,
+    )
+
+
+@student_bp.route("/library/<slug>", methods=["GET", "POST"])
+@login_required
+def library_article(slug):
+    if current_user.role != "student":
+        abort(403)
+    article = LibraryArticle.query.filter_by(slug=slug, status="published").first_or_404()
+    progress = LibraryProgress.query.filter_by(user_id=current_user.id, article_id=article.id).first()
+    if request.method == "POST":
+        payload = request.get_json(silent=True) or request.form
+        try:
+            raw_progress = int(payload.get("progress", 0))
+            last_position = int(payload.get("last_position", raw_progress))
+        except (TypeError, ValueError):
+            return jsonify({"ok": False, "error": "progress ต้องเป็นตัวเลข"}), 400
+        progress_value = max(0, min(100, raw_progress))
+        # The UI exposes 0/25/50/75/100 checkpoints; server-side values are
+        # quantized as well so a client cannot create arbitrary progress states.
+        progress_value = min((0, 25, 50, 75, 100), key=lambda point: abs(point - progress_value))
+        if not progress:
+            progress = LibraryProgress(user_id=current_user.id, article_id=article.id)
+            db.session.add(progress)
+        now = datetime.datetime.utcnow()
+        progress.progress = progress_value
+        progress.last_position = max(0, min(100, last_position))
+        progress.completed = progress_value >= 100
+        progress.last_read_at = now
+        if progress.completed:
+            progress.completed_at = progress.completed_at or now
+        else:
+            progress.completed_at = None
+        db.session.commit()
+        return jsonify({"ok": True, "progress": progress.progress, "completed": progress.completed, "last_position": progress.last_position})
+
+    related_missions = list(article.missions or [])
+    if not related_missions:
+        related_missions = Mission.query.filter_by(department_id=article.department_id, discovery=True).order_by(Mission.id.desc()).limit(3).all()
+    related_categories = LibraryCategory.query.filter_by(department_id=article.department_id).order_by(LibraryCategory.sort_order).all()
+    related = related_articles(article, limit=4)
+    skills = list(article.skills or [])
+    content_blocks = [block.strip() for block in (article.content or "").split("\n\n") if block.strip()]
+    return render_template(
+        "student/library_article.html",
+        article=article,
+        progress=progress,
+        content_blocks=content_blocks,
+        skills=skills,
+        related_missions=related_missions,
+        related_categories=related_categories,
+        related_articles=related,
+    )
+
