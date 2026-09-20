@@ -393,6 +393,16 @@ def _get_competition(code):
 def _participant(comp, user_id):
     return CompetitionParticipant.query.filter_by(competition_id=comp.id,user_id=user_id).first()
 
+def _competition_department_name(comp):
+    """Return the active department used by the competition host.
+
+    Competition questions are department-isolated, so every room must build
+    its question set from the host's selected vocational department.
+    """
+    host=db.session.get(User, comp.host_user_id)
+    dep=selected_department(host) if host else None
+    return dep.name if dep else None
+
 def _ensure_competition_questions(comp):
     """Repair legacy/partially-created rooms that have no question rows.
 
@@ -406,8 +416,13 @@ def _ensure_competition_questions(comp):
     if comp.status != 'waiting':
         return False
     seed=secrets.randbits(63)
-    questions=make_session(comp.total_questions,seed=seed)
-    if not questions:
+    department_name=_competition_department_name(comp)
+    questions=make_session(
+        comp.total_questions,
+        seed=seed,
+        department_name=department_name
+    )
+    if not questions or len(questions) < comp.total_questions:
         return False
     for old in list(comp.questions):
         db.session.delete(old)
@@ -466,8 +481,19 @@ def competition_create():
     title=(request.form.get('title') or 'V-SKILL LIVE DUEL').strip()[:180]
     comp=Competition(code=_competition_code(),title=title,host_user_id=current_user.id,status='waiting',question_seconds=15,total_questions=8)
     db.session.add(comp); db.session.flush()
+    dep=_require_department()
+    if not dep:
+        db.session.rollback()
+        return redirect(url_for('student.department_select'))
     seed=secrets.randbits(63)
-    questions=make_session(comp.total_questions,seed=seed)
+    questions=make_session(
+        comp.total_questions,
+        seed=seed,
+        department_name=dep.name
+    )
+    if len(questions) < comp.total_questions:
+        db.session.rollback()
+        return redirect(url_for('student.competition_home', error='คลังคำถามของสายการเรียนยังไม่พร้อม'))
     for idx,q in enumerate(questions,1):
         db.session.add(CompetitionQuestion(competition_id=comp.id,order_index=idx,question_text=q['question'],
             category=f"{q['category']} · {q['sub']}",choices_json=json.dumps(q['choices'],ensure_ascii=False),correct_index=q['correct_position']))
